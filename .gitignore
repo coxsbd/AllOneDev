@@ -1,0 +1,10 @@
+vendor/
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.venv/
+node_modules/
+.DS_Store
+storage/*.key
