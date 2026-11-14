@@ -9,9 +9,11 @@ return new class extends Migration {
     {
         Schema::create('conversations', function (Blueprint $table) {
             $table->id();
+            $table->string('session_id', 100)->index();
             $table->string('title', 120)->default('New conversation');
             $table->timestamps();
         });
+
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('conversation_id')->constrained()->cascadeOnDelete();

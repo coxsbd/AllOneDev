@@ -1,18 +1,18 @@
 # AllOne AI
 
-A complete starter AI workspace using **PHP 8.2 + Laravel 11**, a **Python FastAPI** AI service, **MySQL**, and a responsive **HTML5/CSS3/JavaScript** interface. Includes chat, writing-assistant, and summarization modes. Conversation messages are saved in MySQL.
+A complete starter AI workspace using **PHP 8.2 + Laravel 11**, a **Python FastAPI** AI service, **MySQL**, and a responsive **HTML5/CSS3/JavaScript** interface. It includes chat, writing-assistant, and summarization modes. Conversation history is stored in MySQL and scoped to the visitor's Laravel session.
 
 ## Requirements
 
 - PHP 8.2+, Composer, and the PDO MySQL extension
 - Python 3.10+ and pip
-- MySQL 8+
-- An OpenAI-compatible provider API key (the provider may charge for use)
+- MySQL 8+ (or a compatible managed MySQL service)
+- An OpenAI API key; provider usage may incur charges
 
 ## Run with GitHub Codespaces
 
-1. Open the repository and create a Codespace.
-2. In the terminal, install Laravel dependencies and configure its environment:
+1. Open this private repository while signed in with access, select **Code → Codespaces → Create codespace on main**.
+2. In the project root terminal, install Laravel and initialize its environment:
 
    ```bash
    composer install
@@ -20,41 +20,44 @@ A complete starter AI workspace using **PHP 8.2 + Laravel 11**, a **Python FastA
    php artisan key:generate
    ```
 
-3. Create a MySQL database named `allone_ai`, then set the MySQL host, username, and password in `.env`. For a managed database, use its connection details.
-4. Configure and run the Python AI service in a second terminal:
+3. Create a MySQL database named `allone_ai`. Set `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD` in `.env` to credentials for a MySQL server reachable from the Codespace.
+4. Add `OPENAI_API_KEY` as a Codespaces secret in repository settings, then restart the Codespace. The secret must be present in the environment where the Python service is started. Never commit a real key.
+5. In a second terminal, install and start the Python service:
 
    ```bash
    cd ai_service
    python -m venv .venv
    source .venv/bin/activate
    pip install -r requirements.txt
-   cp .env.example .env
-   # Edit ai_service/.env and set OPENAI_API_KEY; never commit the real key.
-   set -a && source .env && set +a
+   export OPENAI_API_KEY="$OPENAI_API_KEY"
    uvicorn main:app --host 0.0.0.0 --port 8001
    ```
 
-   On Windows PowerShell, activate with `.venv\\Scripts\\Activate.ps1` and set the variables with `$env:OPENAI_API_KEY="your-key"` and `$env:OPENAI_MODEL="gpt-4o-mini"` instead of `source`.
-5. In another terminal at the project root, run migrations and Laravel:
+   If you prefer a local environment file, copy `ai_service/.env.example` to `ai_service/.env`, add the key there, and load it with `set -a && source .env && set +a` before running Uvicorn. Do not commit that file.
+6. In a third terminal at the project root, run the migration and Laravel:
 
    ```bash
    php artisan migrate
    php artisan serve --host 0.0.0.0 --port 8000
    ```
 
-6. Open forwarded port **8000** in Codespaces. The Python service should run on port **8001**. Set `AI_SERVICE_URL` in the Laravel environment to the Python service URL reachable from the PHP process.
+7. Open forwarded port **8000** in Codespaces. Laravel calls the Python service at `AI_SERVICE_URL` (default `http://127.0.0.1:8001`).
 
-## Configure secrets safely
+## Features
 
-For Codespaces, store `OPENAI_API_KEY` as a Codespaces secret, then restart the Codespace or the Python service. Never put a real key in Git, `.env.example`, frontend JavaScript, or chat messages. The Laravel frontend calls the Python service; the provider key is only used server-side by Python.
+- AI chat with recent follow-up context
+- Writing assistant for drafting and editing
+- Summarization with instructions to preserve source facts
+- Responsive mobile and desktop interface
+- MySQL persistence for conversations and messages
+- Conversations are isolated by Laravel browser session
+- Server-side API key handling, request validation, and CSRF protection
 
-## Features and routes
+## Configuration and security
 
-- `/` — responsive AI workspace with chat, writing, and summarization modes
-- `POST /chat` — validated Laravel endpoint; saves user/assistant messages
-- `GET /health` — Laravel health check
-- Python `GET /health` and `POST /chat` — provider integration
-- MySQL `conversations` and `messages` tables created by `php artisan migrate`
-- Laravel CSRF protection and request size validation
+- `OPENAI_API_KEY` — required by the Python service; configure as a Codespaces secret or in an untracked `ai_service/.env`.
+- `OPENAI_MODEL` — optional; defaults to `gpt-4o-mini`.
+- `AI_SERVICE_URL` — optional Laravel-to-Python service URL; defaults to `http://127.0.0.1:8001`.
+- Database connection settings are read from the root `.env` file.
 
-This starter does not include user accounts; add authentication and authorization before using it for multiple users or sensitive conversations. The current conversation history is not yet isolated by user. Provider and database services require their own credentials and may incur costs.
+Never put a GitHub token or AI provider key in source code, frontend JavaScript, `.env.example`, or chat messages. Revoke any token accidentally exposed. This is a starter app, not a fully audited production deployment: before hosting sensitive or multi-user workloads, add user accounts, authorization, rate limiting, retention controls, monitoring, HTTPS, and security testing. Do not store sensitive personal information in it until those safeguards are in place.
